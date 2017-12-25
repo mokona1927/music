@@ -20,6 +20,10 @@
             data: {
                 type: Array,
                 default: null
+            },
+            listenScroll:{
+                type: Boolean,
+                default: false
             }
         },
         mounted () {
@@ -36,6 +40,14 @@
                 probeType: this.probeType,
                 click: this.click
               })
+
+              if (this.listenScroll) {
+                  //me为vue实例的this,因为$emit是全局分发事件
+                  let me = this
+                  this.scroll.on('scroll', (pos) => {
+                      me.$emit('scroll', pos)
+                  })
+              }
            },
            enable() {
                this.scroll && this.scroll.enable()

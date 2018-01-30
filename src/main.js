@@ -1,24 +1,27 @@
 import 'babel-polyfill'
+import 'common/js/hack'
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import store from './store'
 import fastclick from 'fastclick'
-import VueLazyLoad from 'vue-lazyload'
+import VueLazyload from 'vue-lazyload'
+import store from './store'
 
 import 'common/stylus/index.styl'
 
-/* 懒加载 */
-Vue.use(VueLazyLoad, {
+/* eslint-disable no-unused-vars */
+// import vConsole from 'vconsole'
+
+fastclick.attach(document.body)
+
+Vue.use(VueLazyload, {
   loading: require('common/image/default.png')
 })
 
-/* 绑定在body上，处理dom300s延迟的点击 */
-fastclick.attach(document.body)
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
-  store,
   router,
+  store,
   render: h => h(App)
 })

@@ -3,7 +3,13 @@
     <div class="recommend-content">
       <!-- 轮播 -->
       <div class="slider-wrapper">
-        banner
+        <slider>
+          <div v-if="recommends.length" v-for="item in recommends">
+            <a :href="item.linkUrl">
+              <img :src="item.picUrl">
+            </a>
+          </div>
+        </slider>
       </div>
 
       <!-- 热门歌单推荐列表 -->
@@ -16,10 +22,17 @@
 </template>
 
 <script type="text/ecmascript-6">
+  import Slider from 'base/slider/slider'
+
   import { getRecommend } from 'api/recommend'
   import { ERR_OK } from 'api/config'
   
   export default {
+    data() {
+      return {
+        recommends : [] /* 推荐歌单的数据 */
+      }
+    },
     created () {
       this._getRecommend()
     },
@@ -28,10 +41,13 @@
       _getRecommend() {
         getRecommend().then((res) => {
           if(res.code === ERR_OK) {
-            console.log(res.data.slider)
+            this.recommends = res.data.slider
           }
         })
       }
+    },
+    components: {
+      Slider,
     }
   }
 </script>

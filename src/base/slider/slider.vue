@@ -5,100 +5,54 @@
       </slot>
     </div>
     <div class="dots">
-      <span class="dot" :class="{active: currentPageIndex === index }" v-for="(item, index) in dots"></span>
+      <span class="dot" v-for="{item, index} in dots"
+      :class="{active: currentPageIndex === index}"></span>
     </div>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
-  import {addClass} from 'common/js/dom'
   import BScroll from 'better-scroll'
+  import {addClass} from 'common/js/dom'
 
   export default {
-    name: 'slider',
-    props: {
-      loop: {
-        type: Boolean,
-        default: true
-      },
-      autoPlay: {
-        type: Boolean,
-        default: true
-      },
-      interval: {
-        type: Number,
-        default: 4000
-      }
-    },
-    data() {
+    data () {
       return {
         dots: [],
         currentPageIndex: 0
       }
     },
-    mounted() {
+    props: {
+      /* loop 是否循环轮播 */
+      loop:{
+        type: Boolean,
+        default: true
+      },
+      /* autoPlay 是否自动轮播 */
+      autoPlay: {
+        type: Boolean,
+        default: true
+      },
+      /* interval 轮播间隔时长 */
+      interval: {
+        type: Number,
+        default: 4000
+      }
+    },
+    mounted () {
       setTimeout(() => {
         this._setSliderWidth()
         this._initDots()
         this._initSlider()
-
-        if (this.autoPlay) {
-          this._play()
-        }
-      }, 20)
-
-      window.addEventListener('resize', () => {
-        if (!this.slider || !this.slider.enabled) {
-          return
-        }
-        clearTimeout(this.resizeTimer)
-        this.resizeTimer = setTimeout(() => {
-          if (this.slider.isInTransition) {
-            this._onScrollEnd()
-          } else {
-            if (this.autoPlay) {
-              this._play()
-            }
-          }
-          this.refresh()
-        }, 60)
-      })
-    },
-    activated() {
-      this.slider.enable()
-      let pageIndex = this.slider.getCurrentPage().pageX
-      if (pageIndex > this.dots.length) {
-        pageIndex = pageIndex % this.dots.length
-      }
-      this.slider.goToPage(pageIndex, 0, 0)
-      if (this.loop) {
-        pageIndex -= 1
-      }
-      this.currentPageIndex = pageIndex
-      if (this.autoPlay) {
-        this._play()
-      }
-    },
-    deactivated() {
-      this.slider.disable()
-      clearTimeout(this.timer)
-    },
-    beforeDestroy() {
-      this.slider.disable()
-      clearTimeout(this.timer)
+      }, 20);  /* 一般浏览器刷新在17毫秒左右 */
     },
     methods: {
-      refresh() {
-        if (this.slider) {
-          this._setSliderWidth(true)
-          this.slider.refresh()
-        }
-      },
-      _setSliderWidth(isResize) {
-        this.children = this.$refs.sliderGroup.children
+      /* _setSliderWidth 计算并设置宽度 */
+      _setSliderWidth() {      
+        this.children = this.$refs.sliderGroup.children/* children  sliderGroup子元素 */
+        let width = 0/* width  sliderGroup所有元素的宽度*/
+        let sliderWidth = this.$refs.slider.clientWidth/* sliderWidth slider容器的宽度 */
 
-        let width = 0
-        let sliderWidth = this.$refs.slider.clientWidth
         for (let i = 0; i < this.children.length; i++) {
           let child = this.children[i]
           addClass(child, 'slider-item')
@@ -106,56 +60,33 @@
           child.style.width = sliderWidth + 'px'
           width += sliderWidth
         }
-        if (this.loop && !isResize) {
+
+        /* 循环会多出2个child,所以相应总宽度需要*2 */
+        if (this.loop) {
           width += 2 * sliderWidth
         }
         this.$refs.sliderGroup.style.width = width + 'px'
       },
+      /* _initDots slider下方指示 */
+      _initDots() {
+        this.dots = new Array(this.children.length)
+      },
+      /* _initSlider 初始化slider */
       _initSlider() {
         this.slider = new BScroll(this.$refs.slider, {
           scrollX: true,
           scrollY: false,
-          momentum: false,
-          snap: {
-            loop: this.loop,
-            threshold: 0.3,
-            speed: 400
-          }
+          momentum: false,/* 惯性 */
+          snap: true,
+          snapLoop: this.loop,
+          snapThreshold: 0.3,
+          snapSpeed: 400,
+          click: true
         })
 
-        this.slider.on('scrollEnd', this._onScrollEnd)
-
-        this.slider.on('touchend', () => {
-          if (this.autoPlay) {
-            this._play()
-          }
+        this.slider.on('scrollEnd', () => {
+          let pageIndex = this.slider.getCurrentPage().pageX
         })
-
-        this.slider.on('beforeScrollStart', () => {
-          if (this.autoPlay) {
-            clearTimeout(this.timer)
-          }
-        })
-      },
-      _onScrollEnd() {
-        let pageIndex = this.slider.getCurrentPage().pageX
-        if (this.loop) {
-          pageIndex -= 1
-        }
-        this.currentPageIndex = pageIndex
-        if (this.autoPlay) {
-          this._play()
-        }
-      },
-      _initDots() {
-        this.dots = new Array(this.children.length)
-      },
-      _play() {
-        let pageIndex = this.slider.getCurrentPage().pageX + 1
-        clearTimeout(this.timer)
-        this.timer = setTimeout(() => {
-          this.slider.goToPage(pageIndex, 0, 400)
-        }, this.interval)
       }
     }
   }

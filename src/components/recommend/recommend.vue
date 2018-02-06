@@ -47,7 +47,7 @@
       }
     },
     components: {
-      Slider,
+      Slider
     }
   }
 </script>

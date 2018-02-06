@@ -44,11 +44,25 @@
         this._setSliderWidth()
         this._initDots()
         this._initSlider()
+
+        /* 开启自动轮播 */
+        if (this.autoPlay) {
+          this._paly()
+        }
       }, 20);  /* 一般浏览器刷新在17毫秒左右 */
+
+      window.addEventListener('resize', () => {
+        /* 监听视口改变事件，如果没有改变则return */
+        if (!this.slider) {
+          return
+        }
+        this.sliderWidth(true)
+        this.slider.refresh() /* 使用better-scroll提供的refresh()重新计算*/
+      })
     },
     methods: {
       /* _setSliderWidth 计算并设置宽度 */
-      _setSliderWidth() {      
+      _setSliderWidth(isResize) {      
         this.children = this.$refs.sliderGroup.children/* children  sliderGroup子元素 */
         let width = 0/* width  sliderGroup所有元素的宽度*/
         let sliderWidth = this.$refs.slider.clientWidth/* sliderWidth slider容器的宽度 */
@@ -61,8 +75,8 @@
           width += sliderWidth
         }
 
-        /* 循环会多出2个child,所以相应总宽度需要*2 */
-        if (this.loop) {
+        /* 循环会多出2个child,所以相应总宽度需要*2,当视口改变的时候则不再执行 */
+        if (this.loop && !isResize) {
           width += 2 * sliderWidth
         }
         this.$refs.sliderGroup.style.width = width + 'px'
@@ -80,14 +94,39 @@
           snap: true,
           snapLoop: this.loop,
           snapThreshold: 0.3,
-          snapSpeed: 400,
-          click: true
+          snapSpeed: 400
         })
 
+
         this.slider.on('scrollEnd', () => {
+          /* 当滚动完成后会派发一个scrollEnd事件，使用better-scroll提供的getCurrentPage()方法获取当前的位置 */
           let pageIndex = this.slider.getCurrentPage().pageX
+          if (this.loop) {
+            pageIndex -= 1
+          }
+          this.currentPageIndex = pageIndex
+
+          if (this.autoPlay) {
+            clearTimeout(this.timer)
+            this._paly()
+          }
         })
+      },
+      /* _paly() 开启自动轮播 */
+      _paly() {
+        let pageIndex = this.currentPageIndex +1
+        if(this.loop) {
+          pageIndex += 1
+        }
+        this.timer =setTimeout(() => {
+          /* better-scroll提供的goToPage()移动 */
+          this.slider.goToPage(pageIndex, 0, 400)
+        }, this.interval)
       }
+    },
+    destroyed () {
+      /* 当组件中有定时器的时候， 销毁时清除掉释放内存 */
+      clearTimeout(this.timer)
     }
   }
 </script>

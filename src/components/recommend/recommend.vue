@@ -1,53 +1,78 @@
 <template>
   <div class="recommend">
-    <div class="recommend-content">
-      <!-- 轮播 -->
-      <div class="slider-wrapper">
-        <slider>
-          <div v-if="recommends.length" v-for="item in recommends">
-            <a :href="item.linkUrl">
-              <img :src="item.picUrl">
-            </a>
+    <scroll class="recommend-content" :data="discList">
+      <div>
+        <!-- 轮播 -->
+        <div v-if="recommends.length" class="slider-wrapper">
+          <div class="slider-content">
+            <slider>
+              <div v-for="item in recommends">
+                <a :href="item.linkUrl">
+                  <img :src="item.picUrl">
+                </a>
+              </div>
+            </slider>
           </div>
-        </slider>
-      </div>
+        </div>
 
-      <!-- 热门歌单推荐列表 -->
-      <div class="recommend-list">
-        <h1 class="list-title">热门歌单推荐</h1>
-        <ul></ul>
+        <!-- 热门歌单推荐列表 -->
+        <div class="recommend-list">
+          <h1 class="list-title">热门歌单推荐</h1>
+          <ul>
+            <li v-for="item in discList" class="item">
+              <div class="icon">
+                <img width="60" height="60" :src="item.imgurl">
+              </div>
+              <div class="text">
+                <h2 class="name" v-html="item.creator.name"></h2>
+                <p class="desc" v-html="item.dissname"></p>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
+    </scroll>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
   import Slider from 'base/slider/slider'
+  import Scroll from 'base/scroll/scroll'
 
-  import { getRecommend } from 'api/recommend'
+  import { getRecommend, getDiscList } from 'api/recommend'
   import { ERR_OK } from 'api/config'
   
   export default {
     data() {
       return {
-        recommends : [] /* 推荐歌单的数据 */
+        recommends : [], /* 推荐歌单 */
+        discList: [] /* 歌单列表 */
       }
     },
     created () {
-      this._getRecommend()
+      this._getRecommend(),
+      this._getDiscList()
     },
     methods: {
-      /* 获取数据-recommend */
+      /* 获取数据 */
       _getRecommend() {
         getRecommend().then((res) => {
           if(res.code === ERR_OK) {
             this.recommends = res.data.slider
           }
         })
-      }
+      },
+      _getDiscList() {
+        getDiscList().then((res) => {
+          if(res.code === ERR_OK) {
+            this.discList = res.data.list
+          }
+        })
+      },
     },
     components: {
-      Slider
+      Slider,
+      Scroll
     }
   }
 </script>

@@ -5,8 +5,7 @@
       </slot>
     </div>
     <div class="dots">
-      <span class="dot" v-for="{item, index} in dots"
-      :class="{active: currentPageIndex === index}"></span>
+      <span class="dot" v-for="(item, index) in dots" :class="{active: currentPageIndex === index }"></span>
     </div>
   </div>
 </template>
@@ -16,6 +15,7 @@
   import {addClass} from 'common/js/dom'
 
   export default {
+    name: 'slider',
     data () {
       return {
         dots: [],
@@ -24,7 +24,7 @@
     },
     props: {
       /* loop 是否循环轮播 */
-      loop:{
+      loop: {
         type: Boolean,
         default: true
       },
@@ -56,7 +56,7 @@
         if (!this.slider) {
           return
         }
-        this.sliderWidth(true)
+        this._setSliderWidth(true)
         this.slider.refresh() /* 使用better-scroll提供的refresh()重新计算*/
       })
     },
@@ -64,6 +64,7 @@
       /* _setSliderWidth 计算并设置宽度 */
       _setSliderWidth(isResize) {      
         this.children = this.$refs.sliderGroup.children/* children  sliderGroup子元素 */
+
         let width = 0/* width  sliderGroup所有元素的宽度*/
         let sliderWidth = this.$refs.slider.clientWidth/* sliderWidth slider容器的宽度 */
 
@@ -81,22 +82,18 @@
         }
         this.$refs.sliderGroup.style.width = width + 'px'
       },
-      /* _initDots slider下方指示 */
-      _initDots() {
-        this.dots = new Array(this.children.length)
-      },
       /* _initSlider 初始化slider */
       _initSlider() {
         this.slider = new BScroll(this.$refs.slider, {
           scrollX: true,
           scrollY: false,
           momentum: false,/* 惯性 */
-          snap: true,
-          snapLoop: this.loop,
-          snapThreshold: 0.3,
-          snapSpeed: 400
+          snap: {
+            loop: this.loop,
+            threshold: 0.3,
+            speed: 400
+          }
         })
-
 
         this.slider.on('scrollEnd', () => {
           /* 当滚动完成后会派发一个scrollEnd事件，使用better-scroll提供的getCurrentPage()方法获取当前的位置 */
@@ -112,13 +109,17 @@
           }
         })
       },
+      /* _initDots slider下方指示 */
+      _initDots() {
+        this.dots = new Array(this.children.length)
+      },
       /* _paly() 开启自动轮播 */
       _paly() {
-        let pageIndex = this.currentPageIndex +1
+        let pageIndex = this.slider.getCurrentPage().pageX
         if(this.loop) {
           pageIndex += 1
         }
-        this.timer =setTimeout(() => {
+        this.timer = setTimeout(() => {
           /* better-scroll提供的goToPage()移动 */
           this.slider.goToPage(pageIndex, 0, 400)
         }, this.interval)

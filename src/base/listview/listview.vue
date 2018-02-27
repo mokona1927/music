@@ -1,7 +1,12 @@
 <template>
- <scroll class="listview" :data="data">
+ <scroll class="listview" 
+         :data="data" 
+         ref="listview"
+         :listenScroll="listenScroll"
+         :probeType="probeType"
+         @scroll="scroll">
    <ul>
-     <li v-for="group in data" class="list-group">
+     <li v-for="group in data" class="list-group" ref="listGroup">
        <h2 class="list-group-title">{{group.title}}</h2>
        <ul>
           <li v-for="item in group.items" class="list-group-item">
@@ -11,11 +16,28 @@
        </ul>
      </li>
    </ul>
+
+   <div class="list-shortcut" 
+        @touchstart="onShortcutTouchStart"
+        @touchmove.stop.prevent="onShortcutTouchMove">
+     <ul>
+       <li v-for="item, index in shortcutList" 
+           class="item"
+           :class="{'current': currentIndex == index }"
+           :data-index="index">
+         {{item}}
+       </li>
+     </ul>
+   </div>
  </scroll>
 </template>
 
 <script type="text/ecmascript-6">
  import Scroll from 'base/scroll/scroll'
+
+ import {getData} from 'common/js/dom'
+
+ const ANCHOR_HEIGHT = 18
 
   export default {
     props: {
@@ -25,20 +47,101 @@
       }
     },
     computed: {
-
+      /* shortcutList 右侧快速入口 */
+      shortcutList() {
+        return this.data.map((group) => {
+          return group.title.substr(0, 1)
+        })
+      }
     },
     data() {
       return {
-
+        scrollY: -1,
+        currentIndex: 0
       }
     },
     created() {
-
+      this.touch = {},
+      this.listenScroll = true,
+      this.listenHeight = [],
+      /* 用于scroll不节流 */
+      this.probeType = 3
     },
     methods: {
+      /* 右侧滑动 */
+      onShortcutTouchStart(e) {
+        /* anchorIndex 现在激活节点索引 */
+        let anchorIndex = getData(e.target, 'index')
+        /* firstTouch 滑动手势位置 */
+        let firstTouch = e.touches[0]
+        this.touch.y1 = firstTouch.pageY
+        this.touch.anchorIndex = anchorIndex
+        this._scroll(anchorIndex)
+      },
+      onShortcutTouchMove(e) {
+        let firstTouch = e.touches[0]
+        this.touch.y2 = firstTouch.pageY
+        /* delta Y轴上的偏移 */
+        let delta = (this.touch.y2 - this.touch.y1) / ANCHOR_HEIGHT | 0
+        let anchorIndex =parseInt(this.touch.anchorIndex) + delta
+        this._scroll(anchorIndex)
+      },
+      scroll(pos) {
+        this.scrollY = pos.y
+      },
+      _scroll(index){
+        /* scrollToElement() 第二个参数是指需要多少动画时间 */
+        this.$refs.listview.scrollToElement(this.$refs.listGroup[index], 0)
+      },
+      /* 计算listGroup的高度 */
+      _calculateHeight() {
+        this.listenHeight = []
+        const list = this.$refs.listGroup
+        let height = 0
 
+        this.listenHeight.push(height)
+
+        for (let i = 0; i < list.length; i++) {
+          /* item 为每个group元素 */
+          let item = list[i]
+
+          height += item.clientHeight
+
+          this.listenHeight.push(height)
+
+        }
+      }
     },
     watch: {
+      data() {
+        setTimeout(() => {
+          this._calculateHeight()
+        }, 20)    
+      },
+      scrollY(newY) {
+        const listenHeight = this.listenHeight
+        /* 
+        *** 1、当滚动到顶部的时候，newY>0
+        *** 2、在中间区域滚动的时候，因为添加了上下限，所以比列表多一个，长度需要-1
+        *** 3、当滚动到底部，且-newY大于最后一个元素的上限
+        */ 
+        if (newY > 0) {
+          this.currentIndex = 0
+          return
+        }
+        for (let i = 0; i < listenHeight.length - 1; i++) {
+          let heightB = listenHeight[i]
+          let heightT = listenHeight[i + 1]
+
+          /* newY前面加-是因为网上滚动后newY为负值*/
+          if(-newY >= heightB && -newY < heightT) {
+            this.currentIndex = i
+            return
+          }
+
+          this.currentIndex = listenHeight.length - 2
+        }
+      }
     },
     components: {
       Scroll

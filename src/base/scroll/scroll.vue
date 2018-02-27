@@ -21,7 +21,7 @@ export default {
       type: Boolean,
       default: false
     },
-    /*  */
+    /* scroll是否监听滚动事件 */
     listenScroll: {
       type: Boolean,
       default: false
@@ -65,6 +65,13 @@ export default {
         probeType: this.probeType,
         click: this.click
       });
+
+      if (this.listenScroll) {
+        let me = this
+        this.scroll.on('scroll', (pos) => {
+          me.$emit('scroll', pos)
+        })
+      }
     },
     /* 下列为better-scroll方法代理 */
     disable() {
@@ -76,8 +83,12 @@ export default {
     refresh() {
       this.scroll && this.scroll.refresh();
     },
-    scrollTo() {},
-    scrollToElement() {}
+    scrollTo() {
+      this.scroll && this.scroll.scrollTo.apply(this.scroll, arguments);
+    },
+    scrollToElement() {
+      this.scroll && this.scroll.scrollToElement.apply(this.scroll, arguments)
+    }
   },
   watch: {
     /* 当data刷新时，调用refresh()刷新 */
